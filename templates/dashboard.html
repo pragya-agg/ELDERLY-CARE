@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="{{ language or 'en' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ 'Elderly Care Companion' if language == 'en' else 'वृद्ध देखभाल साथी' }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://kit.fontawesome.com/1234567890.js" crossorigin="anonymous"></script>
+    <style>
+        body {
+            background: linear-gradient(to bottom, #e0f7fa, #b2ebf2);
+            font-family: 'Arial', sans-serif;
+            transition: all 0.3s ease;
+        }
+        .header {
+            background: #4db6ac;
+            border-bottom: 4px solid #26a69a;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .card {
+            background: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+        .text-large { font-size: 20px; }
+        .btn-large {
+            padding: 15px 30px;
+            font-size: 20px;
+            border-radius: 10px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .btn-large:hover {
+            transform: scale(1.05);
+            background-color: #26a69a;
+        }
+        .health-status { font-size: 24px; font-weight: bold; }
+        .nature-bg { background-image: url('https://www.transparenttextures.com/patterns/leaf.png'); background-repeat: repeat; }
+        .chat-bubble {
+            max-width: 75%;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 10px;
+            animation: fadeIn 0.5s ease-in;
+        }
+        .chat-system { background: #e0f7fa; margin-left: auto; }
+        .chat-user { background: #b2ebf2; margin-right: auto; }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @media (max-width: 640px) {
+            .grid-cols-3 { grid-template-columns: 1fr; }
+            .md:col-span-3 { grid-column: span 1 / span 1; }
+            .text-large { font-size: 16px; }
+            .btn-large { padding: 10px 20px; font-size: 16px; }
+        }
+        .health-feedback {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 10px;
+            display: block;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .health-feedback.success { background-color: #d4edda; color: #155724; }
+        .health-feedback.risk { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body class="nature-bg min-h-screen flex flex-col">
+    <header class="header text-white p-6">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center">
+                <i class="fas fa-leaf text-3xl mr-3 text-green-300"></i>
+                <h1 class="text-3xl font-bold">{{ 'Elderly Care Companion' if language == 'en' else 'वृद्ध देखभाल साथी' }}</h1>
+            </div>
+            <form method="post" class="flex items-center">
+                <label for="language" class="mr-2 text-teal-100 text-large">Language:</label>
+                <select name="language" id="language" class="p-2 rounded-lg bg-white text-teal-800 text-large" onchange="this.form.submit()">
+                    <option value="en" {% if language == "en" %}selected{% endif %}>English</option>
+                    <option value="hi" {% if language == "hi" %}selected{% endif %}>हिन्दी</option>
+                </select>
+                <label for="gender" class="ml-4 mr-2 text-teal-100 text-large">Gender:</label>
+                <select name="gender" id="gender" class="p-2 rounded-lg bg-white text-teal-800 text-large" onchange="this.form.submit()">
+                    <option value="male" {% if gender == "male" %}selected{% endif %}>Male</option>
+                    <option value="female" {% if gender == "female" %}selected{% endif %}>Female</option>
+                </select>
+            </form>
+        </div>
+    </header>
+
+    <div class="container mx-auto p-6 flex-grow">
+        <h1 class="text-4xl font-bold text-teal-800 mb-6 text-center animate-fade-in">{{ 'Welcome, Dear Friend!' if language == 'en' else 'स्वागत है, प्रिय मित्र!' }}</h1>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div class="card p-6 text-center">
+                <h2 class="text-2xl font-semibold text-teal-700 mb-2"><i class="fas fa-heartbeat mr-2"></i>{{ labels.get('heart_rate', 'Heart Rate (bpm)') }}</h2>
+                <p class="text-3xl font-bold text-gray-800">{{ latest_health.get('heart_rate', 'N/A')|default('N/A') }} bpm</p>
+                <p class="text-large text-gray-600">{{ latest_health.get('timestamp', 'N/A')|default('N/A') }}</p>
+            </div>
+            <div class="card p-6 text-center">
+                <h2 class="text-2xl font-semibold text-teal-700 mb-2"><i class="fas fa-tachometer-alt mr-2"></i>{{ labels.get('blood_pressure', 'Blood Pressure (Systolic/Diastolic)') }}</h2>
+                <p class="text-3xl font-bold text-gray-800">{{ latest_health.get('blood_pressure', 'N/A')|default('N/A') }}</p>
+            </div>
+            <div class="card p-6 text-center">
+                <h2 class="text-2xl font-semibold text-teal-700 mb-2"><i class="fas fa-exclamation-triangle mr-2"></i>{{ 'Alerts Today' if language == 'en' else 'आज के अलर्ट' }}</h2>
+                <p class="text-3xl font-bold text-gray-800">{{ alerts_today|default(0) }}</p>
+            </div>
+        </div>
+
+        <div class="card p-6 mb-6">
+            <h2 class="text-2xl font-semibold text-teal-700 mb-4"><i class="fas fa-heartbeat mr-2"></i>{{ labels.get('recent_health', 'Your Recent Health') }}</h2>
+            <form id="health-form" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div><label for="heart_rate" class="block text-teal-700 text-large font-bold">{{ labels.get('heart_rate', 'Heart Rate (bpm)') }}</label><input type="number" id="heart_rate" name="heart_rate" value="{{ latest_health.get('heart_rate', '')|default('') }}" class="w-full p-3 border rounded-lg text-large" required></div>
+                <div><label for="bp_systolic" class="block text-teal-700 text-large font-bold">{{ labels.get('blood_pressure', 'Blood Pressure (Systolic/Diastolic)') }}</label><div class="flex space-x-2"><input type="number" id="bp_systolic" name="bp_systolic" value="{{ latest_health.get('blood_pressure', '0/0').split('/')[0]|default('') }}" placeholder="Systolic" class="w-full p-3 border rounded-lg text-large" required><input type="number" id="bp_diastolic" name="bp_diastolic" value="{{ latest_health.get('blood_pressure', '0/0').split('/')[1]|default('') }}" placeholder="Diastolic" class="w-full p-3 border rounded-lg text-large" required></div></div>
+                <div><label for="glucose" class="block text-teal-700 text-large font-bold">{{ labels.get('glucose', 'Glucose (mg/dL)') }}</label><input type="number" id="glucose" name="glucose" value="{{ latest_health.get('glucose', '')|default('') }}" class="w-full p-3 border rounded-lg text-large" required></div>
+                <div class="md:col-span-3 text-center"><button type="submit" class="bg-teal-500 text-white btn-large hover:bg-teal-600">{{ labels.get('submit_health', 'Submit Health Data') }}</button></div>
+            </form>
+            <div id="health-feedback" class="health-feedback"></div>
+        </div>
+
+        <div class="card p-6 mb-6">
+            <h2 class="text-2xl font-semibold text-teal-700 mb-4"><i class="fas fa-bell mr-2"></i>{{ 'Set a Reminder' if language == 'en' else 'रिमाइंडर सेट करें' }}</h2>
+            <form id="reminder-form" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div><label for="reminder-time" class="block text-teal-700 text-large font-bold">{{ labels.get('reminder_time', 'Reminder Time (YYYY-MM-DD HH:MM)') }}</label><input type="text" id="reminder-time" name="time" placeholder="e.g., 2025-04-04 14:30" class="w-full p-3 border rounded-lg text-large" required></div>
+                <div><label for="reminder-message" class="block text-teal-700 text-large font-bold">{{ labels.get('reminder_message', 'Reminder Message') }}</label><input type="text" id="reminder-message" name="message" placeholder="{{ 'e.g., Take your evening medication' if language == 'en' else 'उदाहरण, अपनी शाम की दवा लें' }}" class="w-full p-3 border rounded-lg text-large" required></div>
+                <div><label for="reminder-category" class="block text-teal-700 text-large font-bold">{{ labels.get('reminder_category', 'Category') }}</label><select id="reminder-category" name="category" class="w-full p-3 border rounded-lg text-large"><option value="medicine">{{ 'Medicine' if language == 'en' else 'दवा' }}</option><option value="doctor">{{ 'Doctor Visit' if language == 'en' else 'डॉक्टर की मुलाकात' }}</option><option value="other">{{ 'Other' if language == 'en' else 'अन्य' }}</option></select></div>
+                <div class="md:col-span-3 text-center"><button type="submit" class="bg-teal-500 text-white btn-large hover:bg-teal-600">{{ labels.get('set_reminder', 'Set Reminder') }}</button></div>
+            </form>
+        </div>
+
+        <div class="card p-6 mb-6">
+            <h2 class="text-2xl font-semibold text-teal-700 mb-4"><i class="fas fa-users mr-2"></i>{{ labels.get('chat', "Let's Chat!") }}</h2>
+            <div id="chat-history" class="mb-4 max-h-40 overflow-y-auto"></div>
+            <div id="chat-input" class="flex space-x-2">
+                <input type="text" id="chat-message" placeholder="{{ labels.get('type_message', 'Type your message...') }}" class="w-full p-3 border rounded-lg text-large" disabled>
+                <button id="send-btn" class="bg-teal-500 text-white btn-large hover:bg-teal-600" disabled>{{ labels.get('send', 'Send') }}</button>
+            </div>
+            <button id="start-chat-btn" class="bg-teal-500 text-white btn-large hover:bg-teal-600 mt-4">{{ labels.get('start_chat', 'Start Chat') }}</button>
+        </div>
+
+        <div class="card p-6 mb-6">
+            <h2 class="text-2xl font-semibold text-teal-700 mb-4"><i class="fas fa-notes-medical mr-2"></i>{{ labels.get('recent_health', 'Your Recent Health') }}</h2>
+            <ul id="health-data" class="space-y-3">
+                {% for entry in health_data %}
+                    {% set heart_rate = entry.get('heart_rate', 0)|default(0)|int %}
+                    {% set glucose = entry.get('glucose', 0)|default(0)|int %}
+                    {% if heart_rate > 100 or glucose > 130 or glucose < 70 %}
+                        {% set bg_class = 'bg-red-100' %}
+                    {% elif heart_rate > 90 %}
+                        {% set bg_class = 'bg-yellow-100' %}
+                    {% else %}
+                        {% set bg_class = 'bg-green-100' %}
+                    {% endif %}
+                    <li class="{{ bg_class }} p-3 rounded-lg text-large">
+                        <span class="font-medium text-gray-800">{{ entry.get('timestamp', 'N/A')|default('N/A') }}</span> - 
+                        {{ labels.get('heart_rate', 'Heart Rate (bpm)') }}: <span class="font-bold text-gray-900">{{ heart_rate }}</span> bpm, 
+                        {{ labels.get('blood_pressure', 'Blood Pressure (Systolic/Diastolic)') }}: <span class="font-bold text-gray-900">{{ entry.get('blood_pressure', 'N/A')|default('N/A') }}</span>, 
+                        {{ labels.get('glucose', 'Glucose (mg/dL)') }}: <span class="font-bold text-gray-900">{{ glucose }}</span> mg/dL
+                        {% if entry.get('event') %}<span class="text-red-600 font-bold ml-2"> - {{ entry.get('event') }}</span>{% endif %}
+                        <br><span class="text-gray-600">{{ 'Source' if language == 'en' else 'स्रोत' }}: {{ entry.get('source', 'N/A')|default('N/A') }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div id="health-status" class="fixed bottom-4 right-4 p-4 rounded-lg shadow-lg {% if latest_health.get('heart_rate', 0)|default(0)|int > 100 or latest_health.get('glucose', 0)|default(0)|int > 130 or latest_health.get('glucose', 0)|default(0)|int < 70 %}bg-red-500{% else %}bg-green-500{% endif %} text-white">
+            <p class="health-status">{{ 'Health Status' if language == 'en' else 'स्वास्थ्य स्थिति' }}: {% if latest_health.get('heart_rate', 0)|default(0)|int > 100 or latest_health.get('glucose', 0)|default(0)|int > 130 or latest_health.get('glucose', 0)|default(0)|int < 70 %}{{ 'At Risk' if language == 'en' else 'जोखिम में' }}{% else %}{{ 'Normal' if language == 'en' else 'सामान्य' }}{% endif %}</p>
+        </div>
+    </div>
+
+    <footer class="bg-teal-600 text-white p-4 text-center">
+        <p class="text-large">{{ '© 2025 Elderly Care Companion. All rights reserved.' if language == 'en' else '© 2025 वृद्ध देखभाल साथी। सर्वाधिकार सुरक्षित।' }}</p>
+    </footer>
+
+    <script>
+        window.onload = () => {
+            const message = "{{ language }}" === "hi" ? "नमस्ते, मेरे दोस्त! आपका स्वागत है। मैं आपको जरूरी बातें बताऊंगा।" : "Hello, dear friend! Welcome to your care companion. I’ll keep you updated.";
+            const msg = new SpeechSynthesisUtterance(message);
+            window.speechSynthesis.speak(msg);
+        };
+
+        setInterval(() => {
+            fetch('/api/health')
+                .then(res => res.json())
+                .then(data => {
+                    const latest = data[data.length - 1] || {};
+                    const status = document.getElementById('health-status');
+                    const isAtRisk = (latest['heart_rate'] > 100 || 0) || (latest['glucose'] > 130 || 0) || (latest['glucose'] < 70 || 0);
+                    status.className = `fixed bottom-4 right-4 p-4 rounded-lg shadow-lg ${isAtRisk ? 'bg-red-500' : 'bg-green-500'} text-white`;
+                    status.innerHTML = `<p class="health-status">${isAtRisk ? '{{ 'At Risk' if language == 'en' else 'जोखिम में' }}' : '{{ 'Normal' if language == 'en' else 'सामान्य' }}'}</p>`;
+                })
+                .catch(error => console.error('Health fetch error:', error));
+        }, 5000);
+
+        document.getElementById('reminder-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const response = await fetch('/set_reminder', { method: 'POST', body: formData });
+            const result = await response.json();
+            alert(result.message);
+            e.target.reset();
+        });
+
+        document.getElementById('health-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const response = await fetch('/submit_health', { method: 'POST', body: formData });
+            const result = await response.json();
+            const feedback = document.getElementById('health-feedback');
+            feedback.textContent = result.message;
+            feedback.className = `health-feedback ${result.health_status === 'At Risk' ? 'risk' : 'success'}`;
+            if (result.health_status === 'At Risk') {
+                feedback.style.color = '#721c24';
+            } else {
+                feedback.style.color = '#155724';
+            }
+            setTimeout(() => feedback.textContent = '', 5000); // Clear after 5 seconds
+            e.target.reset();
+        });
+
+        const chatHistory = document.getElementById('chat-history');
+        const chatMessageInput = document.getElementById('chat-message');
+        const sendBtn = document.getElementById('send-btn');
+        const startChatBtn = document.getElementById('start-chat-btn');
+
+        function appendMessage(message, role) {
+            const div = document.createElement('div');
+            div.className = `chat-bubble ${role === 'system' ? 'chat-system' : 'chat-user'}`;
+            div.textContent = message;
+            chatHistory.appendChild(div);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+            if (role === 'system') {
+                const msg = new SpeechSynthesisUtterance(message);
+                window.speechSynthesis.speak(msg);
+            }
+        }
+
+        startChatBtn.addEventListener('click', () => {
+            fetch('/api/start_chat', { method: 'POST' })
+                .then(res => {
+                    if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+                    return res.json();
+                })
+                .then(data => {
+                    if (!data || !data.chat_history || !Array.isArray(data.chat_history)) {
+                        throw new Error('Invalid chat history data');
+                    }
+                    chatHistory.innerHTML = '';
+                    data.chat_history.forEach(message => appendMessage(message.message, message.role));
+                    chatMessageInput.disabled = false;
+                    sendBtn.disabled = false;
+                    startChatBtn.disabled = true;
+                    chatMessageInput.focus();
+                })
+                .catch(error => {
+                    console.error('Start chat error:', error);
+                    appendMessage('Error starting chat. Please try again.', 'system');
+                });
+        });
+
+        sendBtn.addEventListener('click', () => {
+            const message = chatMessageInput.value.trim();
+            if (message) {
+                appendMessage(message, 'user');
+                fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message })
+                })
+                .then(res => {
+                    if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+                    return res.json();
+                })
+                .then(data => {
+                    if (!data || !data.chat_history || !Array.isArray(data.chat_history)) {
+                        throw new Error('Invalid chat response data');
+                    }
+                    data.chat_history.slice(-1).forEach(message => {
+                        if (message.role === 'system') appendMessage(message.message, message.role);
+                    });
+                })
+                .catch(error => {
+                    console.error('Chat error:', error);
+                    appendMessage('Error sending message. Please try again.', 'system');
+                });
+                chatMessageInput.value = '';
+            }
+        });
+
+        chatMessageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendBtn.click();
+        });
+    </script>
+</body>
+</html>
